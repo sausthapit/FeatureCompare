@@ -35,7 +35,7 @@ OpenCVFeatures::OpenCVFeatures() {
     detectorList["mser"]=(mser);
     detectorList["star"]=(star);
 
-    cv::calc
+
 // Descriptors
     descriptorList["sift"]=sift;
     descriptorList["surf"]=surf;
