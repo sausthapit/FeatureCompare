@@ -14,12 +14,15 @@ void VLFeatures::extractLIOP(cv::Mat image, OCVKeypoints ocvKeypoints) {
     // allocate the descriptor array
     vl_size dimension = vl_liopdesc_get_dimension(liop) ;
 
-    void *desc = vl_malloc(sizeof(float) * dimension*ocvKeypoints.size()) ;
+    float *desc=new float[dimension];
+//    void *desc = vl_malloc(sizeof(float) * dimension*ocvKeypoints.size()) ;
 
     // compute descriptor from a patch (an array of length sideLegnth *
 // sideLength)
-    vl_liopdesc_process(liop, desc, ) ;
+//    vl_liopdesc_process(liop, desc,image ) ;
 // delete the object
-    vl_liopdesc_delete(liop) ;
+//    vl_liopdesc_delete(liop) ;
+    for_each(ocvKeypoints.begin(),ocvKeypoints.end(),[image](const auto &kp){
 
+    });
 }

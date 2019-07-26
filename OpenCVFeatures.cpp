@@ -6,6 +6,7 @@
 #include <opencv2/highgui.hpp>
 #include "OpenCVFeatures.h"
 
+using namespace cv;
 OpenCVFeatures::OpenCVFeatures() {
 
     cv::Ptr<cvx2d::SIFT> sift=cvx2d::SIFT::create(); // SIFT
@@ -16,6 +17,12 @@ OpenCVFeatures::OpenCVFeatures() {
     cv::Ptr<cv::AKAZE> akaze=cv::AKAZE::create(); // AKAZE
 
     cv::Ptr<cv::ORB> orb=cv::ORB::create();
+// Todo: harris detector option enable
+    Ptr<FeatureDetector> harris_2d=GFTTDetector::create();
+    Ptr<FeatureDetector> simple=SimpleBlobDetector::create();
+    Ptr<FeatureDetector> mser =MSER::create();
+    Ptr<FeatureDetector> star=cvx2d::StarDetector::create();
+
 // Detectors
     detectorList["sift"]=(sift);
     detectorList["surf"]=(surf);
@@ -23,7 +30,12 @@ OpenCVFeatures::OpenCVFeatures() {
     detectorList["fast"]=(fast);
     detectorList["brisk"]=(brisk);
     detectorList["akaze"]=(akaze);
+    detectorList["harris_2d"]=(harris_2d);
+    detectorList["simple"]=(simple);
+    detectorList["mser"]=(mser);
+    detectorList["star"]=(star);
 
+    cv::calc
 // Descriptors
     descriptorList["sift"]=sift;
     descriptorList["surf"]=surf;
@@ -32,6 +44,7 @@ OpenCVFeatures::OpenCVFeatures() {
     descriptorList["brisk"]=brisk;
 }
 void OpenCVFeatures::runDetectors(cv::Mat image,cv::Mat mask, OCVKeypoints& keypointsWithNames) {
+
 
     for_each( this->detectorList.begin(),this->detectorList.end(),[image,mask,&keypointsWithNames](const auto &fd){
 
@@ -88,4 +101,29 @@ void OpenCVFeatures::extractDescriptors(cv::Mat image, OCVKeypoints &ocvKeypoint
             ocvDescriptors[det_desc]=desc;
         });
     });
+}
+
+void OpenCVFeatures::cornerHarris(cv::Mat image,cv::Mat mask, OCVKeypoints &ocvKeypoints) {
+    cv::Mat dst = cv::Mat::zeros( image.size(), CV_32FC1 );
+    cv::cornerHarris( image, dst, blockSize_H, apertureSize_H, k_H );
+    cv::Mat dst_norm, dst_norm_scaled;
+    normalize( dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, mask );
+    convertScaleAbs( dst_norm, dst_norm_scaled );
+    std::vector<cv::KeyPoint> keypoints;
+    for( int i = 0; i < dst_norm.rows ; i++ )
+    {
+        for( int j = 0; j < dst_norm.cols; j++ )
+        {
+            if( (int) dst_norm.at<float>(i,j) > thresh_H )
+            {
+                cv::KeyPoint kp=cv::KeyPoint();
+                kp.pt.x=i;
+                kp.pt.y=j;
+                kp.octave=0;
+                kp.size=3;
+                keypoints.emplace_back(kp);
+            }
+        }
+    }
+    ocvKeypoints["harris"]=keypoints;
 }
