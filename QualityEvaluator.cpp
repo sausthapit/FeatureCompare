@@ -5,14 +5,14 @@
 #include <fstream>
 #include "QualityEvaluator.h"
 
-string data_path;
-const int DATASETS_COUNT = 8;
+string data_path="/media/saurav/Data/Datasets/oxford_affine/";
+const int DATASETS_COUNT = 1;
 const int TEST_CASE_COUNT = 5;
 
-const string IMAGE_DATASETS_DIR = "detectors_descriptors_evaluation/images_datasets/";
-const string DETECTORS_DIR = "detectors_descriptors_evaluation/detectors/";
-const string DESCRIPTORS_DIR = "detectors_descriptors_evaluation/descriptors/";
-const string KEYPOINTS_DIR = "detectors_descriptors_evaluation/keypoints_datasets/";
+const string IMAGE_DATASETS_DIR = "inputs/";
+const string DETECTORS_DIR = "outputs/detectors/";
+const string DESCRIPTORS_DIR = "outputs/descriptors/";
+const string KEYPOINTS_DIR = "outputs/keypoints_datasets/";
 
 const string PARAMS_POSTFIX = "_params.xml";
 const string RES_POSTFIX = "_res.xml";
@@ -20,12 +20,28 @@ const string RES_POSTFIX = "_res.xml";
 const string REPEAT = "repeatability";
 const string CORRESP_COUNT = "correspondence_count";
 
-string DATASET_NAMES[DATASETS_COUNT] = { "bark", "bikes", "boat", "graf", "leuven", "trees", "ubc", "wall"};
+//string DATASET_NAMES[DATASETS_COUNT] = { "bark", "bikes", "boat", "graf", "leuven", "trees", "ubc", "wall"};
+string DATASET_NAMES[DATASETS_COUNT] = { "bikes"};
 
 string DEFAULT_PARAMS = "default";
 
 string IS_ACTIVE_PARAMS = "isActiveParams";
 string IS_SAVE_KEYPOINTS = "isSaveKeypoints";
+
+/****************************************************************************************\
+*                                  Descriptors evaluation                                 *
+\****************************************************************************************/
+
+const string RECALL = "recall";
+const string PRECISION = "precision";
+
+const string KEYPOINTS_FILENAME = "keypointsFilename";
+const string PROJECT_KEYPOINTS_FROM_1IMAGE = "projectKeypointsFrom1Image";
+const string MATCH_FILTER = "matchFilter";
+const string RUN_PARAMS_IS_IDENTICAL = "runParamsIsIdentical";
+
+const string ONE_WAY_TRAIN_DIR = "detectors_descriptors_evaluation/one_way_train_images/";
+const string ONE_WAY_IMAGES_LIST = "one_way_train_images.txt";
 void BaseQualityEvaluator::readAllDatasetsRunParams()
 {
     string filename = getRunParamsFilename();
@@ -106,7 +122,7 @@ bool BaseQualityEvaluator::readDataset( const string& datasetName, vector<Mat>& 
 
     for( int i = 0; i < (int)imgs.size(); i++ )
     {
-        stringstream filename; filename << "img" << i+1 << ".png";
+        stringstream filename; filename << "img" << i+1 << ".ppm";
         imgs[i] = imread( dirname + filename.str(), 0 );
         if( imgs[i].empty() )
         {
@@ -352,3 +368,213 @@ void DetectorQualityEvaluator::runDatasetTest (const vector<Mat> &imgs, const ve
         writeKeypoints( keypontsFS, keypoints2, ci+1);
     }
 }
+
+string DescriptorQualityEvaluator::getRunParamsFilename() const
+{
+    return data_path + DESCRIPTORS_DIR + algName + PARAMS_POSTFIX;
+}
+
+string DescriptorQualityEvaluator::getResultsFilename() const
+{
+    return data_path + DESCRIPTORS_DIR + algName + RES_POSTFIX;
+}
+
+string DescriptorQualityEvaluator::getPlotPath() const
+{
+    return data_path + DESCRIPTORS_DIR + "plots/";
+}
+
+void DescriptorQualityEvaluator::calcQualityClear( int datasetIdx )
+{
+    calcQuality[datasetIdx].clear();
+}
+
+bool DescriptorQualityEvaluator::isCalcQualityEmpty( int datasetIdx ) const
+{
+    return calcQuality[datasetIdx].empty();
+}
+
+void DescriptorQualityEvaluator::readDefaultRunParams (FileNode &fn)
+{
+    if (! fn.empty() )
+    {
+        commRunParamsDefault.projectKeypointsFrom1Image = (int)fn[PROJECT_KEYPOINTS_FROM_1IMAGE] != 0;
+        commRunParamsDefault.matchFilter = (int)fn[MATCH_FILTER];
+        defaultDescMatcher->read (fn);
+    }
+}
+
+void DescriptorQualityEvaluator::writeDefaultRunParams (FileStorage &fs) const
+{
+    fs << PROJECT_KEYPOINTS_FROM_1IMAGE << commRunParamsDefault.projectKeypointsFrom1Image;
+    fs << MATCH_FILTER << commRunParamsDefault.matchFilter;
+    defaultDescMatcher->write (fs);
+}
+
+void DescriptorQualityEvaluator::readDatasetRunParams( FileNode& fn, int datasetIdx )
+{
+    commRunParams[datasetIdx].isActiveParams = (int)fn[IS_ACTIVE_PARAMS] != 0;
+    if (commRunParams[datasetIdx].isActiveParams)
+    {
+        commRunParams[datasetIdx].keypontsFilename = (string)fn[KEYPOINTS_FILENAME];
+        commRunParams[datasetIdx].projectKeypointsFrom1Image = (int)fn[PROJECT_KEYPOINTS_FROM_1IMAGE] != 0;
+        commRunParams[datasetIdx].matchFilter = (int)fn[MATCH_FILTER];
+        specificDescMatcher->read (fn);
+    }
+    else
+    {
+        setDefaultDatasetRunParams(datasetIdx);
+    }
+}
+
+void DescriptorQualityEvaluator::writeDatasetRunParams( FileStorage& fs, int datasetIdx ) const
+{
+    fs << IS_ACTIVE_PARAMS << commRunParams[datasetIdx].isActiveParams;
+    fs << KEYPOINTS_FILENAME << commRunParams[datasetIdx].keypontsFilename;
+    fs << PROJECT_KEYPOINTS_FROM_1IMAGE << commRunParams[datasetIdx].projectKeypointsFrom1Image;
+    fs << MATCH_FILTER << commRunParams[datasetIdx].matchFilter;
+
+    defaultDescMatcher->write (fs);
+}
+
+void DescriptorQualityEvaluator::setDefaultDatasetRunParams( int datasetIdx )
+{
+    commRunParams[datasetIdx] = commRunParamsDefault;
+    commRunParams[datasetIdx].keypontsFilename = "SURF_" + DATASET_NAMES[datasetIdx] + ".xml.gz";
+}
+
+void DescriptorQualityEvaluator::writePlotData( int di ) const
+{
+    stringstream filename;
+    filename << getPlotPath() << algName << "_" << DATASET_NAMES[di] << ".csv";
+    FILE *file = fopen (filename.str().c_str(), "w");
+    size_t size = calcDatasetQuality[di].size();
+    for (size_t i=0;i<size;i++)
+    {
+        fprintf( file, "%f, %f\n", 1 - calcDatasetQuality[di][i].precision, calcDatasetQuality[di][i].recall);
+    }
+    fclose( file );
+}
+
+void DescriptorQualityEvaluator::readAlgorithm( )
+{
+    defaultDescMatcher = DescriptorMatcher::create( algName );
+    specificDescMatcher = DescriptorMatcher::create( algName );
+
+    if( defaultDescMatcher == 0 )
+    {
+        Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create( algName );
+        Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create( matcherName );
+        defaultDescMatcher = new VectorDescriptorMatch( extractor, matcher );
+        specificDescMatcher = new VectorDescriptorMatch( extractor, matcher );
+
+        if( extractor == 0 || matcher == 0 )
+        {
+            printf("Algorithm can not be read\n");
+            exit(-1);
+        }
+    }
+}
+
+void DescriptorQualityEvaluator::calculatePlotData( vector<vector<DMatch> > &allMatches, vector<vector<uchar> > &allCorrectMatchesMask, int di )
+{
+    vector<Point2f> recallPrecisionCurve;
+    computeRecallPrecisionCurve( allMatches, allCorrectMatchesMask, recallPrecisionCurve );
+
+    calcDatasetQuality[di].clear();
+    const float resultPrecision = 0.5;
+    bool isResultCalculated = false;
+    const double eps = 1e-2;
+
+    Quality initQuality;
+    initQuality.recall = 0;
+    initQuality.precision = 0;
+    calcDatasetQuality[di].push_back( initQuality );
+
+    for( size_t i=0;i<recallPrecisionCurve.size();i++ )
+    {
+        Quality quality;
+        quality.recall = recallPrecisionCurve[i].y;
+        quality.precision = 1 - recallPrecisionCurve[i].x;
+        Quality back = calcDatasetQuality[di].back();
+
+        if( fabs( quality.recall - back.recall ) < eps && fabs( quality.precision - back.precision ) < eps )
+            continue;
+
+        calcDatasetQuality[di].push_back( quality );
+
+        if( !isResultCalculated && quality.precision < resultPrecision )
+        {
+            for(int ci=0;ci<TEST_CASE_COUNT;ci++)
+            {
+                calcQuality[di][ci].recall = quality.recall;
+                calcQuality[di][ci].precision = quality.precision;
+            }
+            isResultCalculated = true;
+        }
+    }
+}
+
+void DescriptorQualityEvaluator::runDatasetTest (const vector<Mat> &imgs, const vector<Mat> &Hs, int di, int &progress)
+{
+    FileStorage keypontsFS( data_path + KEYPOINTS_DIR + commRunParams[di].keypontsFilename, FileStorage::READ );
+    if( !keypontsFS.isOpened())
+    {
+        calcQuality[di].clear();
+        printf( "keypoints from file %s can not be read\n", commRunParams[di].keypontsFilename.c_str() );
+        return;
+    }
+
+    Ptr<GenericDescriptorMatcher> descMatch = commRunParams[di].isActiveParams ? specificDescMatcher : defaultDescMatcher;
+    calcQuality[di].resize(TEST_CASE_COUNT);
+
+    vector<KeyPoint> keypoints1;
+    readKeypoints( keypontsFS, keypoints1, 0);
+
+    int progressCount = DATASETS_COUNT*TEST_CASE_COUNT;
+
+    vector<vector<DMatch> > allMatches1to2;
+    vector<vector<uchar> > allCorrectMatchesMask;
+    for( int ci = 0; ci < TEST_CASE_COUNT; ci++ )
+    {
+        progress = update_progress( testName, progress, di*TEST_CASE_COUNT + ci + 1, progressCount, 0 );
+
+        vector<KeyPoint> keypoints2;
+        if( commRunParams[di].projectKeypointsFrom1Image )
+        {
+            // TODO need to test function calcKeyPointProjections
+            calcKeyPointProjections( keypoints1, Hs[ci], keypoints2 );
+            filterKeyPointsByImageSize( keypoints2,  imgs[ci+1].size() );
+        }
+        else
+            readKeypoints( keypontsFS, keypoints2, ci+1 );
+        // TODO if( commRunParams[di].matchFilter )
+
+        vector<vector<DMatch> > matches1to2;
+        vector<vector<uchar> > correctMatchesMask;
+        vector<Point2f> recallPrecisionCurve; // not used because we need recallPrecisionCurve for
+        // all images in dataset
+        evaluateGenericDescriptorMatcher( imgs[0], imgs[ci+1], Hs[ci], keypoints1, keypoints2,
+                                          &matches1to2, &correctMatchesMask, recallPrecisionCurve,
+                                          descMatch );
+        allMatches1to2.insert( allMatches1to2.end(), matches1to2.begin(), matches1to2.end() );
+        allCorrectMatchesMask.insert( allCorrectMatchesMask.end(), correctMatchesMask.begin(), correctMatchesMask.end() );
+    }
+
+    calculatePlotData( allMatches1to2, allCorrectMatchesMask, di );
+}
+
+//--------------------------------- Calonder descriptor test --------------------------------------------
+class CalonderDescriptorQualityEvaluator : public DescriptorQualityEvaluator
+{
+public:
+    CalonderDescriptorQualityEvaluator() :
+            DescriptorQualityEvaluator( "Calonder", "quality-descriptor-calonder") {}
+    virtual void readAlgorithm( )
+    {
+        string classifierFile = data_path + "/features2d/calonder_classifier.rtc";
+        defaultDescMatcher = new VectorDescriptorMatch( new CalonderDescriptorExtractor<float>( classifierFile ),
+                                                        new BFMatcher(NORM_L2) );
+        specificDescMatcher = defaultDescMatcher;
+    }
+};

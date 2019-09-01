@@ -27,3 +27,6 @@ endif(EXISTS ${VLFEAT_LIB})
 add_executable(FeatureCompare main.cpp OpenCVFeatures.cpp VLFeatures.cpp  QualityEvaluator.cpp )
 
 target_link_libraries(FeatureCompare ${OpenCV_LIBS} ${VLFEAT_LIB})
+
+add_executable(ConvertHomographyFile ConvertHomography.cpp)
+target_link_libraries(ConvertHomographyFile PRIVATE "stdc++fs"  ${OpenCV_LIBS})

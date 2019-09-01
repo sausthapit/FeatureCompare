@@ -27,11 +27,37 @@ int main() {
 ////    cv::imshow("test",src);
 ////    cv::waitKey(0);
 //    cvtColor( src, src, cv::COLOR_BGR2GRAY );
+//    cv::Ptr<FeatureDetector> sift=cvx2d::SIFT::create(); // SIFT
+//    cv::Ptr<FeatureDetector> fast=cv::FastFeatureDetector::create(); // SIFT
+//    cv::Ptr<FeatureDetector> sift=cvx2d::SiftFeatureDetector.create(); // SIFT
+
     cv::Ptr<FeatureDetector> sift=cvx2d::SIFT::create(); // SIFT
+    cv::Ptr<FeatureDetector> surf=cvx2d::SURF::create(); // SURF
+    cv::Ptr<FeatureDetector> gfft=cv::GFTTDetector::create(); // Good Features to Track
+    cv::Ptr<FeatureDetector> fast=cv::FastFeatureDetector::create(); // Fast
+    cv::Ptr<FeatureDetector> brisk=cv::BRISK::create(); // BRISK
+    cv::Ptr<FeatureDetector> akaze=cv::AKAZE::create(); // AKAZE
+
+    Ptr<DescriptorExtractor> harris_2d=GFTTDetector::create();
+    Ptr<DescriptorExtractor> simple=SimpleBlobDetector::create();
+    Ptr<DescriptorExtractor> mser =MSER::create();
+    Ptr<DescriptorExtractor> star=cvx2d::StarDetector::create();
+
     Ptr<BaseQualityEvaluator> evals[] =
             {
 
-                    new DetectorQualityEvaluator(sift,"FAST", "quality-detector-fast")
+                    new DetectorQualityEvaluator(fast,"FAST", "quality-detector-fast"),
+                    new DetectorQualityEvaluator(sift,"sift", "quality-detector-sift"),
+                    new DetectorQualityEvaluator(surf,"surf", "quality-detector-surf"),
+                    new DetectorQualityEvaluator(gfft,"gfft", "quality-detector-gfft"),
+                    new DetectorQualityEvaluator(brisk,"brisk", "quality-detector-brisk"),
+                    new DetectorQualityEvaluator(akaze,"akaze", "quality-detector-akaze"),
+
+//                    new De
+
+
+
+
             };
     for( size_t i = 0; i < sizeof(evals)/sizeof(evals[0]); i++ )
     {

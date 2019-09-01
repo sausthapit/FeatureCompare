@@ -1,4 +1,5 @@
-//
+// This code is forked from https://github.com/opencv/opencv/blob/2.4/samples/cpp/detector_descriptor_evaluation.cpp
+// Which is not available in new version of opencv
 // Created by saurav on 26/07/19.
 //
 
@@ -110,4 +111,74 @@ protected:
     bool isSaveKeypointsDefault;
     bool isActiveParamsDefault;
 };
+/****************************************************************************************\
+*                                  Descriptors evaluation                                 *
+\****************************************************************************************/
+
+class DescriptorQualityEvaluator : public BaseQualityEvaluator
+{
+public:
+enum {
+    NO_MATCH_FILTER = 0
+};
+
+DescriptorQualityEvaluator(const char *_descriptorName, const char *_testName, const char *_matcherName = 0) :
+        BaseQualityEvaluator(_descriptorName, _testName) {
+    calcQuality.resize(DATASETS_COUNT);
+    calcDatasetQuality.resize(DATASETS_COUNT);
+    commRunParams.resize(DATASETS_COUNT);
+
+    commRunParamsDefault.projectKeypointsFrom1Image = true;
+    commRunParamsDefault.matchFilter = NO_MATCH_FILTER;
+    commRunParamsDefault.isActiveParams = false;
+
+    if (_matcherName)
+        matcherName = _matcherName;
+}
+
+protected:
+virtual string getRunParamsFilename() const;
+virtual string getResultsFilename() const;
+virtual string getPlotPath() const;
+
+virtual void calcQualityClear( int datasetIdx );
+virtual bool isCalcQualityEmpty( int datasetIdx ) const;
+
+virtual void readDatasetRunParams( FileNode& fn, int datasetIdx ); //
+virtual void writeDatasetRunParams( FileStorage& fs, int datasetIdx ) const;
+virtual void setDefaultDatasetRunParams( int datasetIdx );
+virtual void readDefaultRunParams( FileNode &fn );
+virtual void writeDefaultRunParams( FileStorage &fs ) const;
+
+virtual void readAlgorithm();
+virtual void processRunParamsFile() {}
+virtual void runDatasetTest( const vector<Mat> &imgs, const vector<Mat> &Hs, int di, int &progress );
+
+virtual void writePlotData( int di ) const;
+void calculatePlotData( vector<vector<DMatch> > &allMatches, vector<vector<uchar> > &allCorrectMatchesMask, int di );
+
+struct Quality
+{
+    float recall;
+    float precision;
+};
+vector<vector<Quality> > calcQuality;
+vector<vector<Quality> > calcDatasetQuality;
+
+struct CommonRunParams
+{
+    string keypontsFilename;
+    bool projectKeypointsFrom1Image;
+    int matchFilter; // not used now
+    bool isActiveParams;
+};
+vector<CommonRunParams> commRunParams;
+
+Ptr<GenericDescriptorMatch> specificDescMatcher;
+Ptr<GenericDescriptorMatch> defaultDescMatcher;
+
+CommonRunParams commRunParamsDefault;
+string matcherName;
+};
+
 #endif //FEATURECOMPARE_QUALITYEVALUATOR_H
