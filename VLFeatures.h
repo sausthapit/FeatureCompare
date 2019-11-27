@@ -21,7 +21,7 @@ private:
     VlLiopDesc * liop;
 public:
     VLFeatures();
-    void extractLIOP(cv::Mat image,OCVKeypoints ocvKeypoints );
+    void extractLIOP(cv::Mat image, const OCVKeypoints& ocvKeypoints,OCVDescriptors& ocvDescriptors );
 
 
 };

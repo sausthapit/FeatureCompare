@@ -174,8 +174,8 @@ struct CommonRunParams
 };
 vector<CommonRunParams> commRunParams;
 
-Ptr<GenericDescriptorMatch> specificDescMatcher;
-Ptr<GenericDescriptorMatch> defaultDescMatcher;
+//Ptr<GenericDescriptorMatch> specificDescMatcher;
+//Ptr<GenericDescriptorMatch> defaultDescMatcher;
 
 CommonRunParams commRunParamsDefault;
 string matcherName;

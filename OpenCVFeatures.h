@@ -6,11 +6,17 @@
 #define FEATURECOMPARE_OPENCVFEATURES_H
 
 #include <map>
+#include<opencv2/features2d.hpp>
+#ifdef NONFREE
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/xfeatures2d.hpp>
+namespace cvx2d = cv::xfeatures2d;
+#endif // NONFREE
+
+
 #include <opencv2/imgproc.hpp>
 
-namespace cvx2d= cv::xfeatures2d;
+
 typedef std::map<std::string,cv::Ptr<cv::FeatureDetector>> OCVFeatureDetectors;
 typedef std::map<std::string,cv::Ptr<cv::DescriptorExtractor>> OCVDescriptorExtractor;
 
@@ -37,7 +43,7 @@ public:
     void runDetectors(cv::Mat, cv::Mat, OCVKeypoints&);
     void extractDescriptors(cv::Mat,OCVKeypoints&,OCVDescriptors&);
     void cornerHarris(cv::Mat,cv::Mat, OCVKeypoints&);
-
+	void evaluateDetectors(const cv::Mat&, const  cv::Mat&, const cv::Mat&, OCVKeypoints&, OCVKeypoints&,std::map<std::string,float>&, std::map<std::string,int>& );
 
 
 };

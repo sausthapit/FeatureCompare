@@ -2,7 +2,7 @@
 // Created by saurav on 30/08/19.
 //
 
-
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #include <iostream>
 #include <experimental/filesystem>
 #include <opencv2/core.hpp>
@@ -16,7 +16,8 @@ void convertOneFile(fs::path fname){
     std::ifstream infile(fname);
     fs::path outfile=fname;
     outfile+=".xml";
-    cv::FileStorage storage(fs::absolute(outfile),cv::FileStorage::WRITE);
+	cv::String outfile_str = fs::absolute(outfile).generic_string();
+    cv::FileStorage storage(outfile_str,cv::FileStorage::WRITE);
     int row=0;
     while (infile >>a>>b>>c){
         H.push_back(a);
