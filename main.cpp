@@ -111,8 +111,8 @@ int main(int argc, char **argv) {
     vector<string> vstrImageRight;
     vector<double> vTimestamps;
     LoadImages("",cam, vstrImageLeft, vstrImageRight, vTimestamps);
-//    const int nImages = vstrImageLeft.size();
-    const int nImages = 10;
+    const int nImages = vstrImageLeft.size();
+//    const int nImages = 10;
     cv::Mat imgNext;
     cv::Mat img;
     cv::Mat mask=cv::Mat();
