@@ -146,8 +146,11 @@ int main(int argc, char **argv) {
 
 
     }
-    VideoWriter video("image_matches"+to_string(cam)+".avi",CV_FOURCC('M','J','P','G'),10, Size(img.cols*2,img.rows),true);
-
+//    uncomment to write video
+//    VideoWriter video("image_matches"+to_string(cam)+".avi",CV_FOURCC('M','J','P','G'),10, Size(img.cols*2,img.rows),true);
+    ofstream rep_File ("repeatability.csv",std::ofstream::out);
+    ofstream cor_File ("correspondent.csv",std::ofstream::out);
+    bool first=true;
     for(int ni=0; ni<nImages-1; ni++) {
         Mat img_matches;
 //        estimate homography based on SURF features and RANSAC.
@@ -155,12 +158,34 @@ int main(int argc, char **argv) {
         std::map<std::string, float> repeatability;
         std::map<std::string, int> correspCount;
 
-//        cout<<ni<<endl;
-        video.write(img_matches);
+
+
+//    uncomment to write video
+//        video.write(img_matches);
         openCvFeatures.evaluateDetectors(images[ni], images[ni+1], H, ocvKeypoints[ni], ocvKeypoints[ni+1], repeatability, correspCount);
 
+        OCVFeatureDetectors featureDetectors=openCvFeatures.getDetectorList();
+        if(first){
+            for (OCVFeatureDetectors::iterator it = featureDetectors.begin(); it != featureDetectors.end(); ++it)
+            {
+                // write header
+                rep_File <<it->first;
+                cor_File <<it->first;
+            }
+
+            first=false;
+        }
+        for (OCVFeatureDetectors::iterator it = featureDetectors.begin(); it != featureDetectors.end(); ++it)
+        {
+
+            rep_File<<repeatability[it->first];
+            rep_File<<correspCount[it->first];
+        }
+       
         repeatabilities.emplace_back(repeatability);
         correspCounts.emplace_back(correspCount);
+
+
 //        vector<vector<DMatch> > matches1to2;
 //        vector<vector<uchar> > correctMatchesMask;
 //        vector<vector<DMatch> > allMatches1to2;
@@ -175,7 +200,11 @@ int main(int argc, char **argv) {
 //        allMatches1to2.insert( allMatches1to2.end(), matches1to2.begin(), matches1to2.end() );
 //        allCorrectMatchesMask.insert( allCorrectMatchesMask.end(), correctMatchesMask.begin(), correctMatchesMask.end() );
     }
-    video.release();
+
+    rep_File.close();
+    cor_File.close();
+//     uncomment to write video
+//    video.release();
 
 
     return 0;

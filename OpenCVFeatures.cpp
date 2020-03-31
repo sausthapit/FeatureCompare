@@ -173,8 +173,11 @@ Mat OpenCVFeatures::estimateHomography(Mat img_object,Mat img_scene, Mat& img_ma
     }
     //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
     int minHessian = 400;
+#if CV_MAJOR_VERSION == 2
+    Ptr<FeatureDetector> detector = FeatureDetector::create( "SURF" );
+#else
     Ptr<FeatureDetector> detector = cvx2d::SURF::create( minHessian );
-
+#endif
     std::vector<KeyPoint> keypoints_object, keypoints_scene;
     Mat descriptors_object, descriptors_scene;
 
@@ -345,6 +348,10 @@ void OpenCVFeatures::evaluateDescriptorMatcher(const Mat &img1, const Mat &img2,
 
     computeRecallPrecisionCurve( *matches1to2, *correctMatches1to2Mask, recallPrecisionCurve );
 
+}
+
+const OCVFeatureDetectors &OpenCVFeatures::getDetectorList() const {
+    return detectorList;
 }
 
 

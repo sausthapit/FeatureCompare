@@ -11,9 +11,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++fs")
 #set(CMAKE_PREFIX_PATH /home/saurav/local/)
 #set(OpenCV_DIR /usr/local/opencv240)
 #set(CMAKE_PREFIX_PATH /usr/local/opencv240)
-set(OpenCV_DIR /usr/local/opencv340)
-set(CMAKE_PREFIX_PATH /usr/local/opencv340)
-find_package( OpenCV 3.4 REQUIRED )
+set(OpenCV_DIR /usr/local/opencv420)
+set(CMAKE_PREFIX_PATH /usr/local/opencv420)
+find_package( OpenCV REQUIRED )
 
 #vlfeat
 #set(VLFEAT_DIR C:/dev/vlfeat-0.9.21/)

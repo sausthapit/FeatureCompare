@@ -14,7 +14,7 @@
 #include "opencv2/legacy/legacy.hpp"
 
 #else
-#define NONFREE
+//#define NONFREE
 #ifdef NONFREE
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/xfeatures2d.hpp>
@@ -60,6 +60,8 @@ public:
                                                     std::vector<std::vector<DMatch> >* _matches1to2, std::vector<std::vector<uchar> >* _correctMatches1to2Mask,
                                                     std::vector<Point2f>& recallPrecisionCurve,
                                                     const Ptr<DescriptorMatcher>& _dmatcher );
+
+    const OCVFeatureDetectors &getDetectorList() const;
 };
 
 
